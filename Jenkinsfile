@@ -39,7 +39,8 @@ pipeline {
         stage('git checkout') {
             steps {
                 sh "${linuxgit} clone -b dev git@github.com:thumbeyashwath/jenkins-cloudformation-deployment-example.git"
-                sh "ls -lrt"
+                sh "ls -lrt jenkins-cloudformation-deployment-example/scripts/"
+                sh "pwd"
         }
     }
     stage('check version') {
@@ -47,7 +48,7 @@ pipeline {
         ansiColor('xterm') {
           /*container("jenkins-agent") {*/
             sh 'aws --version'
-            sh 'aws sts get-caller-identity'
+            //sh 'aws sts get-caller-identity'
           }
         }
       }
@@ -74,25 +75,26 @@ pipeline {
       }
     }
 
+
     stage('stack-execution') {
-      when {
+        when {
         expression { params.ACTION == 'deploy-stack' || params.ACTION == 'execute-changeset' }
       }
-      steps {
-        ansiColor('xterm') {
-          //container("jenkins-agent") {
-            withCredentials([[
-              $class: 'AmazonWebServicesCredentialsBinding',
-              credentialsId: "${CFN_TCC_CREDENTIALS_ID}",
-              accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-              secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-                sh 'scripts/deploy-stack-dev.sh ${STACK_NAME} ${PARAMETERS_FILE_NAME} ${TEMPLATE_NAME} ${CHANGESET_MODE} ${REGION}'
+    steps {
+        withCredentials([[
+            $class: 'AmazonWebServicesCredentialsBinding',
+            credentialsId: '${CFN_TCC_CREDENTIALS_ID}',
+            accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+            secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+        ]]) {
+            sh 'echo AWS_ACCESS_KEY_ID is ${AWS_ACCESS_KEY_ID} '
+            sh 'echo AWS_SECRET_ACCESS_KEY is ${AWS_SECRET_ACCESS_KEY}'
+            sh 'AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} AWS_DEFAULT_REGION=${REGION} jenkins-cloudformation-deployment-example/scripts/deploy-stack-dev-describe.sh ${STACK_NAME} ${PARAMETERS_FILE_NAME} ${TEMPLATE_NAME} ${CHANGESET_MODE} ${REGION}'
+            
             }
-          }
-        //}
-      }
+        }
     }
-
+    
     stage('create-changeset') {
       when {
         expression { params.ACTION == 'create-changeset' }
@@ -102,10 +104,10 @@ pipeline {
          // container("jenkins-agent") {
             withCredentials([[
               $class: 'AmazonWebServicesCredentialsBinding',
-              credentialsId: "${CFN_TCC_CREDENTIALS_ID}",
+              credentialsId: '${CFN_TCC_CREDENTIALS_ID}',
               accessKeyVariable: 'AWS_ACCESS_KEY_ID',
               secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-                sh 'scripts/deploy-stack-dev.sh ${STACK_NAME} ${PARAMETERS_FILE_NAME} ${TEMPLATE_NAME} ${CHANGESET_MODE} ${REGION}'
+                sh 'AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} AWS_DEFAULT_REGION=${REGION} jenkins-cloudformation-deployment-example/scripts/deploy-stack-dev.sh ${STACK_NAME} ${PARAMETERS_FILE_NAME} ${TEMPLATE_NAME} ${CHANGESET_MODE} ${REGION}'
             }
           }
         //}
@@ -121,10 +123,10 @@ pipeline {
          // container("jenkins-agent") {
             withCredentials([[
               $class: 'AmazonWebServicesCredentialsBinding',
-              credentialsId: "${CFN_TCC_CREDENTIALS_ID}",
+              credentialsId: '${CFN_TCC_CREDENTIALS_ID}',
               accessKeyVariable: 'AWS_ACCESS_KEY_ID',
               secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-                sh 'scripts/delete-stack-dev.sh ${STACK_NAME} ${REGION}'
+                sh 'AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} AWS_DEFAULT_REGION=${REGION} jenkins-cloudformation-deployment-example/scripts/delete-stack-dev.sh ${STACK_NAME} ${REGION}'
             }
           //}
         }
@@ -133,4 +135,4 @@ pipeline {
     
       
 }
-    }
+}
