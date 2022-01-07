@@ -27,8 +27,8 @@ fi
 if [[ $CHANGESET_MODE == "true" ]] || [[ $CHANGESET_MODE == "True" ]]; then
     aws cloudformation deploy \
     --stack-name $STACK_NAME \
-    --template-file cloudformation/$TEMPLATE_NAME \
-    --parameter-overrides file://parameters/$PARAMETERS_FILE_NAME \
+    --template-file jenkins-cloudformation-deployment-example/cloudformation/$TEMPLATE_NAME \
+    --parameter-overrides file://jenkins-cloudformation-deployment-example/parameters/$PARAMETERS_FILE_NAME \
     --capabilities CAPABILITY_NAMED_IAM \
     --region $REGION
 else
